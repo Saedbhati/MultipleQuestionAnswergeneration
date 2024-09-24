@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# Models
+models/
+
+# PEM files (Sensitive keys)
+*.pem
+
+# Environment files
+.env

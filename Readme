@@ -1,0 +1,21 @@
+Mutliple choice Question and answer generation using T5 model based on paper https://arxiv.org/abs/2201.09012
+
+Abstract: Testing with quiz questions has proven to be an effective strategy for better educational processes. However, manually creating quizzes is a tedious and time-consuming task. To address this challenge, we present Leaf, a system for generating multiple-choice questions from factual text. In addition to being very well suited for classroom settings, Leaf could be also used in an industrial setup, e.g., to facilitate onboarding and knowledge sharing, or as a component of chatbots, question answering systems, or Massive Open Online Courses (MOOCs).
+
+
+currently genrate only one question and their answer
+
+api:http://ec2-3-109-2-50.ap-south-1.compute.amazonaws.com:8080/genrate
+
+send context vai form-data
+
+
+models weight:https://drive.google.com/file/d/1vrlgIOBjFbjkEu4Trp4HAJwxeWAYBRtX/view?usp=sharing
+
+
+just extract in project home dir
+
+future work :
+
+imporve ui 
+do not genrate duplicate question 
