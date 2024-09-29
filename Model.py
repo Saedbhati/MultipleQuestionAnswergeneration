@@ -10,9 +10,9 @@ class Model():
         self.tokenizer = T5Tokenizer.from_pretrained("./models/tokeniser")
         self.DistracterGen = T5ForConditionalGeneration.from_pretrained("./models/distrackerGen").to(self.device)
 
-    def genQandA(self, context):
+    def genQandA(self, context,num_QA):
         context_token = self.tokenizer.encode_plus(
-            f"Generate a diverse question and answer based on the following context: {context}",
+            context,
             max_length=512,
             return_attention_mask=True,
             padding='max_length',
@@ -25,19 +25,23 @@ class Model():
         attention_mask = context_token['attention_mask'].to(self.device)
 
         output = self.QandAGenerator.generate(
-        input_ids=input_ids,
-        attention_mask=attention_mask,
-        do_sample=True,  # Enable sampling
-        max_length=150,
-        top_k=50,  # Use top-k sampling to select from the top-k most probable tokens
-        top_p=0.95,  # Or use top-p (nucleus) sampling to keep the cumulative probability
-        temperature=1.0,  # Increase for more randomness
-        num_return_sequences=4  # Return more than one sequence
-    )
-        print(output)
-        output = self.tokenizer.decode(output[1], skip_special_tokens=True).split("<sep>")
-        print(output)
-        return {"answer": output[0], "question": output[1]}
+    input_ids=input_ids,
+    attention_mask=attention_mask,
+    max_length=128,
+    num_return_sequences=num_QA,
+    num_beams=num_QA * 2  # Increase the beam search width
+)
+
+        QandA=[]
+        for i in output:
+
+        
+            # output = self.tokenizer.decode(output, skip_special_tokens=True)
+            
+            QandA.append(self.tokenizer.decode(i, skip_special_tokens=True).split("<sep>"))
+        
+        # return {"answer": output[0], "question": output[1]}
+        return QandA
 
     def distracter(self, answer, question, context):
         context_token = self.tokenizer.encode_plus(
@@ -52,16 +56,32 @@ class Model():
         input_ids = context_token['input_ids'].to(self.device)
         attention_mask = context_token['attention_mask'].to(self.device)
 
-        output = self.DistracterGen.generate(input_ids=input_ids, attention_mask=attention_mask)
+        output = self.DistracterGen.generate(
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        do_sample=True,        # Enable sampling
+        top_k=50,              # Consider the top 50 tokens for each generation step
+        top_p=0.95,            # Use nucleus sampling to ensure diversity
+        temperature=0.7,       # Add randomness to generation
+        max_length=64,         # Limit distracter length
+        num_return_sequences=3  # Return 3 distracters
+    )
 
         output = self.tokenizer.decode(output[0], skip_special_tokens=True).split("<sep>")
         return output
 
-    def gen(self, context):
-        data = self.genQandA(context)
-        data['distracter'] = self.distracter(data['answer'], data['question'], context)
+    def gen(self, context, num_QA):
+        QandA_pairs = self.genQandA(context, num_QA)
+        data = []
+        for answer, question in QandA_pairs:
+            distracters = self.distracter(answer, question, context)
+            data.append({
+                "question": question,
+                "answer": answer,
+                "distracters": distracters
+            })
         return data
-    
+        
     def train_QA(self,dataloader,epochs,learning_rate):
         optimizer = Adam(self.QandAGenerator.parameters(), lr=learning_rate)
         self.QandAGenerator.train()
